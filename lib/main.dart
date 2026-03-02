@@ -36,7 +36,7 @@ class _ListScreenState extends State<ListScreen> {
   DateTime? selecteDate;
   bool isFormDisplayed = false;
   
-  // Contrôleurs pour la modification
+  // fonction pour la modification
   final TextEditingController editTaskController = TextEditingController();
   String editPriority = 'moyenne';
   DateTime? editDate;
@@ -85,6 +85,18 @@ class _ListScreenState extends State<ListScreen> {
       ),
     );
   }
+  Color getPriorityColor(String priority) {
+    switch (priority) {
+      case 'Relax':
+        return Colors.lightBlue;
+      case 'moyenne':
+        return Colors.yellow;
+      case 'Urgent':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
   
   void modifyTask(String id, String newName, String newPriority, DateTime? newDate) {
     int index = tasks.indexWhere((task) => task.id == id);
@@ -122,7 +134,7 @@ class _ListScreenState extends State<ListScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Tâche mise à jour"),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.lightBlue,
       ),
     );
   }
@@ -134,10 +146,8 @@ class _ListScreenState extends State<ListScreen> {
     
     showDialog(
       context: context,
-      builder: (context) => SizedBox(
-        width: 400,  // Largeur fixe
-        height: 300, 
-        child:AlertDialog(
+      builder: (context) => AlertDialog(
+        constraints: BoxConstraints(maxWidth: 500),
         title: Text('Modifier la tâche'), 
         content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -150,57 +160,40 @@ class _ListScreenState extends State<ListScreen> {
             ),
             ),
             SizedBox(height: 10),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            Wrap(
+              spacing: 4,  
+              runSpacing: 4,
               children: [
-                
-                Text('Priorité: '),
-                ChoiceChip(
-                  label: Text('Relax'),
-                  selected: editPriority == 'Relax',
-                  onSelected: (_) => setState(() => editPriority = 'Relax'),
-                ),
-                 
-                ChoiceChip(
-                  label: Text('moyenne'),
-                  selected: editPriority == 'moyenne',
-                  onSelected: (_) => setState(() => editPriority = 'moyenne'),
-                ),
-                
-                ChoiceChip(
-                  label: Text('Urgent'),
-                  selected: editPriority == 'Urgent',
-                  onSelected: (_) => setState(() => editPriority = 'Urgent'),
-                ),
-              ],
+                //Text('Priorité: '),
+                  buildPriorityChip('Relax', Colors.lightBlue),  
+                  SizedBox(width: 8),
+                  buildPriorityChip('moyenne', Colors.yellow),   
+                  SizedBox(width: 8), 
+                  buildPriorityChip('Urgent', Colors.red),  
+                ],
             ),
             SizedBox(height: 10),
             Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.max,
               children: [
-                Text(editDate == null 
+                Text ( editDate == null 
                   ? 'Pas de date' 
                   : 'Date: ${editDate!.day}/${editDate!.month}'),
-                TextButton(
-                  onPressed: () async {
-                    DateTime? picked = await showDatePicker(
-                      context: context,
-                      initialDate: editDate ?? DateTime.now(),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2030),
-                    );
-                    if (picked != null) {
-                      setState(() => editDate = picked);
-                    }
-                  },
-                  child: Text('Choisir'),
-                ),
-                if (editDate != null)
-                  IconButton(
-                    icon: Icon(Icons.clear),
-                    onPressed: () => setState(() => editDate = null),
-                  ),
+                  TextButton(
+                    onPressed: () async {
+                      DateTime? picked = await showDatePicker(
+                        context: context,
+                        initialDate: editDate ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2030),
+                      );
+                      if (picked != null) {
+                        setState(() => editDate = picked);
+                      }
+                    },
+                    child: Text('Choisir'),
+                 ),
+                  
               ],
             ),
           ],
@@ -224,27 +217,25 @@ class _ListScreenState extends State<ListScreen> {
           ),
         ],
       ),
-    ));
+    );
   }
 
   // Fonction pour construire les chips de priorité
   Widget buildPriorityChip(String label, Color color) {
     return FilterChip(
       label: Text(label),
-      selected: selectedPriority == label,
+      selected: editPriority == label,
       onSelected: (selected) {
-        setState(() {
-          selectedPriority = label;
-        });
+        setState(() {editPriority = label;});
       },
       selectedColor: color.withValues(alpha: 0.3),
       checkmarkColor: color,
       backgroundColor: Colors.grey.shade100,
       labelStyle: TextStyle(
-        color: selectedPriority == label ? color : Colors.black,
-        fontWeight: selectedPriority == label ? FontWeight.bold : FontWeight.normal,
+        color: editPriority == label ? color : Colors.black,
+        fontWeight: editPriority == label ? FontWeight.bold : FontWeight.normal,
       ),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 12 , vertical: 8),
     );
   }
 
@@ -303,7 +294,7 @@ class _ListScreenState extends State<ListScreen> {
                       ),
                       Divider(height: 20),
                       Row(
-                        spacing: 49,
+                        
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           buildPriorityChip('Relax', Colors.lightBlue),
@@ -414,7 +405,7 @@ class _ListScreenState extends State<ListScreen> {
           // Affichage des tâches 
           Expanded(
             child: tasks.isEmpty 
-              ? Center(child: Text("Ajouter une tâche vous n'en avez pas"))
+              ? Center(child: Text("Ajouter une tâche vous n'en avez aucune"))
               : ListView.builder(
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
@@ -480,11 +471,7 @@ class _ListScreenState extends State<ListScreen> {
                         leading: CircleAvatar(
                           backgroundColor: task.isCompleted 
                               ? Colors.green 
-                              : (task.priority == 'Urgent' 
-                                  ? Colors.red 
-                                  : (task.priority == 'moyenne' 
-                                      ? Colors.orange 
-                                      : Colors.lightBlue)),
+                              : getPriorityColor(task.priority),
                           radius: 8,
                         ),
                         title: Text(
@@ -498,7 +485,12 @@ class _ListScreenState extends State<ListScreen> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(task.priority),
+                            Text(task.priority,
+                              style: TextStyle(
+                                color: getPriorityColor(task.priority),
+                                
+                              ),
+                            ),
                             if (task.dueDate != null)
                               Text(
                                 'Date: ${task.dueDate!.day}/${task.dueDate!.month}/${task.dueDate!.year}',
@@ -507,7 +499,7 @@ class _ListScreenState extends State<ListScreen> {
                           ],
                         ),
                         trailing: IconButton(
-                          icon: Icon(Icons.edit, color: Colors.blue),
+                          icon: Icon(Icons.edit, color: Colors.lightBlue),
                           onPressed: () => showEditDialog(task),
                         ),
                         onTap: () => showEditDialog(task),
