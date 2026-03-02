@@ -161,7 +161,7 @@ class _ListScreenState extends State<ListScreen> {
             ),
             SizedBox(height: 10),
             Wrap(
-              spacing: 4,  
+              spacing: 8,  
               runSpacing: 4,
               children: [
                 //Text('Priorité: '),
@@ -460,6 +460,9 @@ class _ListScreenState extends State<ListScreen> {
                         if (direction == DismissDirection.startToEnd) {
                           // marquer comme terminé
                           toggleTaskCompletion(task.id);
+                          setState(() {
+                          tasks.removeAt(index);
+                        });
                         } else {
                           //suppression
                           deleteTask(task.id);
