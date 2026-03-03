@@ -31,19 +31,19 @@ class ListScreen extends StatefulWidget {
 }
 
 class _ListScreenState extends State<ListScreen> {
-  List<Task> tasks = []; 
+  List<Task> tasks = [];
   final TextEditingController newTask = TextEditingController();
-  String searchQuery = ''; 
+  String searchQuery = '';
   String selectedPriority = 'moyenne';
   DateTime? selecteDate;
   bool isFormDisplayed = false;
-  
+
   // fonction pour la modification
   final TextEditingController editTaskController = TextEditingController();
   String editPriority = 'moyenne';
   DateTime? editDate;
 
-  void addTask(){
+  void addTask() {
     if (newTask.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -51,14 +51,14 @@ class _ListScreenState extends State<ListScreen> {
           backgroundColor: Colors.red,
         ),
       );
-      return; 
+      return;
     }
     setState(() {
       tasks.add(Task(
-        id: DateTime.now().toString(), 
-        nom: newTask.text, 
-        priority: editPriority, 
-        dueDate: selecteDate
+        id: DateTime.now().toString(),
+        nom: newTask.text,
+        priority: editPriority,
+        dueDate: selecteDate,
       ));
     });
     newTask.clear();
@@ -66,16 +66,16 @@ class _ListScreenState extends State<ListScreen> {
     selecteDate = null;
     isFormDisplayed = false;
   }
-  
-  void exitAddTask() {    
+
+  void exitAddTask() {
     setState(() {
       newTask.clear();
       selectedPriority = 'moyenne';
       selecteDate = null;
-      isFormDisplayed = false;  // Cache le formulaire
+      isFormDisplayed = false; // Cache le formulaire
     });
   }
-  
+
   void deleteTask(String id) {
     setState(() {
       tasks.removeWhere((task) => task.id == id);
@@ -87,7 +87,11 @@ class _ListScreenState extends State<ListScreen> {
       ),
     );
   }
-  Color getPriorityColor(String priority) {
+
+  Color getPriorityColor(String priority, bool isCompleted) {
+    if (isCompleted) {
+      return Colors.grey;
+    }
     switch (priority) {
       case 'Relax':
         return Colors.lightBlue;
@@ -102,113 +106,116 @@ class _ListScreenState extends State<ListScreen> {
 
   void showSearchBar(BuildContext context) {
     TextEditingController searchController = TextEditingController();
-  showDialog(
-    context: context, 
-    builder: (context) => AlertDialog(
-      content: TextField(
-        decoration: InputDecoration(
-          hintText: 'Search...',
-          prefixIcon: Icon(Icons.search),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: TextField(
+          controller: searchController,
+          decoration: InputDecoration(
+            hintText: 'Search...',
+            prefixIcon: Icon(Icons.search),
+          ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                searchQuery = searchController.text;
+              });
+              Navigator.pop(context);
+            },
+            child: Text('Search'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () {
-            searchTasks();
-            setState(() {
-              searchQuery = searchController.text; 
-            });
-            
-            Navigator.pop(context);
-          },
-          child: Text('Search'),
-        ),
-      ],
-    ),
-  );
-}
-void showSortOptions(BuildContext context) {
-  // Liste déroulante qui affiche les différents type de tris 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('Trier par'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text('Nom (A à Z)'),
-              leading: Icon(Icons.sort_by_alpha),
-              onTap: () {
-                // Logique de tri par nom croissant                
-                  setState(() {
-                   tasks.sort((a, b) => a.nom.toLowerCase().compareTo(b.nom.toLowerCase()));
-                  });
-                Navigator.pop(context);
-              }
-            ),
-            ListTile(
-              title: Text('Nom (Z à A)'),
-              leading: Transform.flip(
-               flipX: true, 
-               child: const Icon(Icons.sort_by_alpha),
-              ),
-              onTap: () {
-                // Logique de tri par nom décroissant
-                setState(() {
-                  tasks.sort((a, b) => b.nom.toLowerCase().compareTo(a.nom.toLowerCase()));
-                });  
-                Navigator.pop(context);
-              }
-            )
-          ]
-        )
-      );
-    }
-  );      
-     
-}     
-    
-  //Fonction de recherche 
-  List<Task> searchTasks() {
-  if (searchQuery.isEmpty) {
-    return tasks; 
-  } else {
-    return tasks.where((task) => 
-      task.nom.toLowerCase().contains(searchQuery.toLowerCase())
-    ).toList();
+    );
   }
-}
-  
-  void modifyTask(String id, String newName, String newPriority, DateTime? newDate) {
+
+  void showSortOptions(BuildContext context) {
+    // Liste déroulante qui affiche les différents type de tris
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Trier par'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text('Nom (A à Z)'),
+                leading: Icon(Icons.sort_by_alpha),
+                onTap: () {
+                  // Logique de tri par nom croissant
+                  setState(() {
+                    tasks.sort((a, b) =>
+                        a.nom.toLowerCase().compareTo(b.nom.toLowerCase()));
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: Text('Nom (Z à A)'),
+                leading: Transform.flip(
+                  flipX: true,
+                  child: const Icon(Icons.sort_by_alpha),
+                ),
+                onTap: () {
+                  // Logique de tri par nom décroissant
+                  setState(() {
+                    tasks.sort((a, b) =>
+                        b.nom.toLowerCase().compareTo(a.nom.toLowerCase()));
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  //Fonction de recherche
+  List<Task> searchTasks() {
+    if (searchQuery.isEmpty) {
+      return tasks;
+    } else {
+      return tasks
+          .where((task) =>
+              task.nom.toLowerCase().contains(searchQuery.toLowerCase()))
+          .toList();
+    }
+  }
+
+  void modifyTask(String id, String newName, String newPriority,
+      DateTime? newDate) {
     int index = tasks.indexWhere((task) => task.id == id);
     if (index != -1) {
       Task modifiedTask = Task(
-        id: tasks[index].id,           
+        id: tasks[index].id,
         nom: newName,
-        dueDate: newDate,             
+        dueDate: newDate,
         priority: newPriority,
-        isCompleted: tasks[index].isCompleted, 
+        isCompleted: tasks[index].isCompleted,
       );
-      
+
       setState(() {
-        tasks[index] = modifiedTask;  
+        tasks[index] = modifiedTask;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Tâche mise à jour"), 
+          content: Text("Tâche mise à jour"),
           backgroundColor: Colors.green,
         ),
       );
     }
   }
-  
+
   void toggleTaskCompletion(String id) {
     setState(() {
       int index = tasks.indexWhere((task) => task.id == id);
@@ -216,7 +223,7 @@ void showSortOptions(BuildContext context) {
         tasks[index].isCompleted = !tasks[index].isCompleted;
       }
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Tâche terminée"),
@@ -224,63 +231,60 @@ void showSortOptions(BuildContext context) {
       ),
     );
   }
-  
 
   void showEditDialog(Task task) {
     editTaskController.text = task.nom;
     editPriority = task.priority;
     editDate = task.dueDate;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         constraints: BoxConstraints(maxWidth: 500),
-        title: Text('Modifier la tâche'), 
+        title: Text('Modifier la tâche'),
         content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: editTaskController,
-            decoration: InputDecoration(
-             labelText: 'Nom de la tâche',
-              border: OutlineInputBorder(),
-            ),
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: editTaskController,
+              decoration: InputDecoration(
+                labelText: 'Nom de la tâche',
+                border: OutlineInputBorder(),
+              ),
             ),
             SizedBox(height: 10),
             Wrap(
-              spacing: 8,  
+              spacing: 8,
               runSpacing: 4,
               children: [
-                //Text('Priorité: '),
-                  buildPriorityChip('Relax', Colors.lightBlue),  
-                  SizedBox(width: 8),
-                  buildPriorityChip('moyenne', Colors.yellow),   
-                  SizedBox(width: 8), 
-                  buildPriorityChip('Urgent', Colors.red),  
-                ],
+                buildPriorityChip('Relax', Colors.lightBlue),
+                SizedBox(width: 8),
+                buildPriorityChip('moyenne', Colors.yellow),
+                SizedBox(width: 8),
+                buildPriorityChip('Urgent', Colors.red),
+              ],
             ),
             SizedBox(height: 10),
             Row(
               mainAxisSize: MainAxisSize.max,
               children: [
-                Text ( editDate == null 
-                  ? 'Pas de date' 
-                  : 'Date: ${editDate!.day}/${editDate!.month}'),
-                  TextButton(
-                    onPressed: () async {
-                      DateTime? picked = await showDatePicker(
-                        context: context,
-                        initialDate: editDate ?? DateTime.now(),
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2030),
-                      );
-                      if (picked != null) {
-                        setState(() => editDate = picked);
-                      }
-                    },
-                    child: Text('Choisir'),
-                 ),
-                  
+                Text(editDate == null
+                    ? 'Pas de date'
+                    : 'Date: ${editDate!.day}/${editDate!.month}'),
+                TextButton(
+                  onPressed: () async {
+                    DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: editDate ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2030),
+                    );
+                    if (picked != null) {
+                      setState(() => editDate = picked);
+                    }
+                  },
+                  child: Text('Choisir'),
+                ),
               ],
             ),
           ],
@@ -293,10 +297,10 @@ void showSortOptions(BuildContext context) {
           ElevatedButton(
             onPressed: () {
               modifyTask(
-                task.id, 
-                editTaskController.text, 
-                editPriority, 
-                editDate
+                task.id,
+                editTaskController.text,
+                editPriority,
+                editDate,
               );
               Navigator.pop(context);
             },
@@ -307,34 +311,34 @@ void showSortOptions(BuildContext context) {
     );
   }
 
-
-
   // Fonction pour construire les chips de priorité
   Widget buildPriorityChip(String label, Color color) {
     return FilterChip(
       label: Text(label),
       selected: editPriority == label,
       onSelected: (selected) {
-        setState(() {editPriority = label;});
+        setState(() {
+          editPriority = label;
+        });
       },
       selectedColor: color.withValues(alpha: 0.3),
       checkmarkColor: color,
       backgroundColor: Colors.grey.shade100,
       labelStyle: TextStyle(
         color: editPriority == label ? color : Colors.black,
-        fontWeight: editPriority == label ? FontWeight.bold : FontWeight.normal,
+        fontWeight:
+            editPriority == label ? FontWeight.bold : FontWeight.normal,
       ),
-      padding: EdgeInsets.symmetric(horizontal: 12 , vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     );
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
           // Formulaire d'ajout
-
           if (isFormDisplayed)
             Padding(
               padding: const EdgeInsets.all(12.0),
@@ -349,7 +353,6 @@ void showSortOptions(BuildContext context) {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      
                       Center(
                         child: Text(
                           'Ma todo List',
@@ -361,7 +364,6 @@ void showSortOptions(BuildContext context) {
                         ),
                       ),
                       Divider(height: 20),
-                      
                       // Champ nom
                       TextField(
                         controller: newTask,
@@ -375,15 +377,14 @@ void showSortOptions(BuildContext context) {
                         ),
                       ),
                       Divider(height: 20),
-                      
                       // Section Priorité
                       Text(
                         'Priorité',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w500),
                       ),
                       Divider(height: 20),
                       Row(
-                        
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           buildPriorityChip('Relax', Colors.lightBlue),
@@ -392,11 +393,11 @@ void showSortOptions(BuildContext context) {
                         ],
                       ),
                       Divider(height: 20),
-                      
                       // Section Date
                       Text(
                         'Date d\'échéance',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w500),
                       ),
                       Divider(height: 20),
                       Container(
@@ -408,13 +409,16 @@ void showSortOptions(BuildContext context) {
                           children: [
                             Expanded(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
                                 child: Text(
-                                  selecteDate == null 
-                                    ? 'Aucune date sélectionnée' 
-                                    : '${selecteDate!.day}/${selecteDate!.month}/${selecteDate!.year}',
+                                  selecteDate == null
+                                      ? 'Aucune date sélectionnée'
+                                      : '${selecteDate!.day}/${selecteDate!.month}/${selecteDate!.year}',
                                   style: TextStyle(
-                                    color: selecteDate == null ? Colors.grey : Colors.black,
+                                    color: selecteDate == null
+                                        ? Colors.grey
+                                        : Colors.black,
                                   ),
                                 ),
                               ),
@@ -422,11 +426,11 @@ void showSortOptions(BuildContext context) {
                             TextButton.icon(
                               onPressed: () async {
                                 DateTime today = DateTime.now();
-                                DateTime todayMidnight = DateTime(today.year, today.month, today.day); 
+                                DateTime todayMidnight = DateTime(
+                                    today.year, today.month, today.day);
                                 DateTime? picked = await showDatePicker(
-                                  
                                   context: context,
-                                  initialDate:todayMidnight,
+                                  initialDate: todayMidnight,
                                   firstDate: todayMidnight,
                                   lastDate: DateTime(2070),
                                 );
@@ -440,13 +444,13 @@ void showSortOptions(BuildContext context) {
                             if (selecteDate != null)
                               IconButton(
                                 icon: Icon(Icons.clear, size: 16),
-                                onPressed: () => setState(() => selecteDate = null),
-                              ), 
+                                onPressed: () =>
+                                    setState(() => selecteDate = null),
+                              ),
                           ],
                         ),
                       ),
                       Divider(height: 20),
-                      
                       // Boutons
                       Row(
                         children: [
@@ -490,141 +494,151 @@ void showSortOptions(BuildContext context) {
                 ),
               ),
             ),
-          
-            Row(  
-                mainAxisSize: MainAxisSize.min,
-
-                children: [         
-                  IconButton(
-                    //alignment: Alignment.topLeft,
-                    icon: Icon(Icons.search_rounded, color: Colors.lightBlue),
-                    onPressed: () => showSearchBar(context)
-                  ),
-                  IconButton(
-                    //alignment: Alignment.topRight,
-                    icon: Icon(Icons.arrow_downward, color: Colors.lightBlue),
-                    onPressed: () => showSortOptions(context)
-                  ),
-                ]
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(Icons.search_rounded, color: Colors.lightBlue),
+                onPressed: () => showSearchBar(context),
               ),
-            
-            // Affichage des tâches   
-            Expanded(
-              child: tasks.isEmpty 
-              ? Center(child: Text("Ajouter une tâche vous n'en avez aucune"))
-              : ListView.builder(
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) {
-                    Task task = tasks[index];
-                    //La recherche et le filtrage
-                    return  Dismissible(
-                      key: Key(task.id),
-                      direction: DismissDirection.horizontal,
-                      
-                      // Fond pour glissement à DROITE
-                      background: Container(
-                        color: Colors.green,
-                        alignment: Alignment.centerLeft,
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          children: [
-                            Icon(Icons.check_circle, color: Colors.white),
-                            SizedBox(width: 10),
-                            Text(
-                              'Terminer',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+              IconButton(
+                icon: Icon(Icons.arrow_downward, color: Colors.lightBlue),
+                onPressed: () => showSortOptions(context),
+              ),
+              if (searchQuery.isNotEmpty)
+                IconButton(
+                  icon: Icon(Icons.clear, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      searchQuery = '';
+                    });
+                  },
+                )
+            ],
+          ),
+          // Affichage des tâches
+          Expanded(
+            child: searchTasks().isEmpty
+                ? Center(
+                    child: Text(
+                      searchQuery.isEmpty
+                          ? "Ajouter une tâche vous n'en avez aucune"
+                          : "Aucun résultat pour '$searchQuery'",
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: searchTasks().length,
+                    itemBuilder: (context, index) {
+                      Task task = searchTasks()[index];
+                      return Dismissible(
+                        key: Key(task.id),
+                        direction: DismissDirection.horizontal,
+                        // Fond pour glissement à DROITE
+                        background: Container(
+                          color: Colors.green,
+                          alignment: Alignment.centerLeft,
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.white),
+                              SizedBox(width: 10),
+                              Text(
+                                'Terminer',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Fond pour glissement à GAUCHE
-                      secondaryBackground: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Icon(Icons.delete, color: Colors.white),
-                            SizedBox(width: 10),
-                            Text(
-                              'Supprimer',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Action après glissement
-                      onDismissed: (direction) {
-                        if (direction == DismissDirection.startToEnd) {
-                          
-                        Future.delayed(Duration(milliseconds: 100), () {
-                          if (mounted) {
-                            toggleTaskCompletion(task.id);
-                          }
-                        });
-                        } else {
-                          //suppression
-                          deleteTask(task.id);
-                        }
-                      },
-                      // La tâche elle-même
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: task.isCompleted 
-                              ? Colors.green 
-                              : getPriorityColor(task.priority),
-                          radius: 8,
-                        ),
-                        title: Text(
-                          task.nom,
-                          style: TextStyle(
-                            decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                            color: task.isCompleted ? Colors.grey : Colors.black,
-                            fontWeight: task.isCompleted ? FontWeight.normal : FontWeight.bold,
+                            ],
                           ),
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(task.priority,
-                              style: TextStyle(
-                                color: getPriorityColor(task.priority),
-                              ),
-                            ),
-                            if (task.dueDate != null)
+                        // Fond pour glissement à GAUCHE
+                        secondaryBackground: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Icon(Icons.delete, color: Colors.white),
+                              SizedBox(width: 10),
                               Text(
-                                'Date: ${task.dueDate!.day}/${task.dueDate!.month}/${task.dueDate!.year}',
-                                style: TextStyle(fontSize: 12),
+                                'Supprimer',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                          ],
+                            ],
+                          ),
                         ),
-                        trailing: IconButton(
-                          icon: Icon(Icons.edit, color: Colors.lightBlue),
-                          onPressed: () => showEditDialog(task),
+                        // Action après glissement
+                        confirmDismiss: (direction) async {
+                          if (direction == DismissDirection.startToEnd) {
+                            toggleTaskCompletion(task.id);
+                            return false;
+                          } else {
+                            return true;
+                          }
+                        },
+                        onDismissed: (direction) {
+                          if (direction == DismissDirection.endToStart) {
+                            deleteTask(task.id);
+                          }
+                        },
+                        //La tâche elle-même
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: getPriorityColor(task.priority, task.isCompleted),
+                            radius: 8,
+                          ),
+                          title: Text(
+                            task.nom,
+                            style: TextStyle(
+                              decoration: task.isCompleted
+                                  ? TextDecoration.none
+                                  : null,
+                              color: task.isCompleted
+                                  ? Colors.grey
+                                  : Colors.black,
+                              fontWeight: task.isCompleted
+                                  ? FontWeight.normal
+                                  : FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                task.isCompleted ? 'terminée' : task.priority,
+                                style: TextStyle(
+                                  color: getPriorityColor(task.priority, task.isCompleted),
+                                ),
+                              ),
+                              if (task.dueDate != null && !task.isCompleted)
+                                Text(
+                                  'Date: ${task.dueDate!.day}/${task.dueDate!.month}/${task.dueDate!.year}',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                            ],
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(Icons.edit, color: Colors.lightBlue),
+                            onPressed: () => showEditDialog(task),
+                          ),
+                          onTap: () => showEditDialog(task),
                         ),
-                        onTap: () => showEditDialog(task),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
           ),
         ],
-      ),     
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          
           setState(() {
-            isFormDisplayed = true;  //affichage du formulaire
-          });  
+            isFormDisplayed = true; //affichage du formulaire
+          });
         },
         tooltip: 'Ajouter une tâche',
         child: const Icon(Icons.add),
