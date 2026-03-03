@@ -56,12 +56,12 @@ class _ListScreenState extends State<ListScreen> {
       tasks.add(Task(
         id: DateTime.now().toString(), 
         nom: newTask.text, 
-        priority: selectedPriority, 
+        priority: editPriority, 
         dueDate: selecteDate
       ));
     });
     newTask.clear();
-    selectedPriority = 'moyenne';
+    editPriority = 'moyenne';
     selecteDate = null;
     isFormDisplayed = false;
   }
