@@ -38,7 +38,7 @@ class _ListScreenState extends State<ListScreen> {
   DateTime? selecteDate;
   bool isFormDisplayed = false;
 
-  // fonction pour la modification
+  // Pour la modification
   final TextEditingController editTaskController = TextEditingController();
   String editPriority = 'moyenne';
   DateTime? editDate;
@@ -72,7 +72,7 @@ class _ListScreenState extends State<ListScreen> {
       newTask.clear();
       selectedPriority = 'moyenne';
       selecteDate = null;
-      isFormDisplayed = false; // Cache le formulaire
+      isFormDisplayed = false;
     });
   }
 
@@ -112,14 +112,14 @@ class _ListScreenState extends State<ListScreen> {
         content: TextField(
           controller: searchController,
           decoration: InputDecoration(
-            hintText: 'Search...',
+            hintText: 'Rechercher...',
             prefixIcon: Icon(Icons.search),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: Text('Annuler'),
           ),
           TextButton(
             onPressed: () {
@@ -128,7 +128,7 @@ class _ListScreenState extends State<ListScreen> {
               });
               Navigator.pop(context);
             },
-            child: Text('Search'),
+            child: Text('Rechercher'),
           ),
         ],
       ),
@@ -136,7 +136,6 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   void showSortOptions(BuildContext context) {
-    // Liste déroulante qui affiche les différents type de tris
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -149,7 +148,6 @@ class _ListScreenState extends State<ListScreen> {
                 title: Text('Nom (A à Z)'),
                 leading: Icon(Icons.sort_by_alpha),
                 onTap: () {
-                  // Logique de tri par nom croissant
                   setState(() {
                     tasks.sort((a, b) =>
                         a.nom.toLowerCase().compareTo(b.nom.toLowerCase()));
@@ -164,7 +162,6 @@ class _ListScreenState extends State<ListScreen> {
                   child: const Icon(Icons.sort_by_alpha),
                 ),
                 onTap: () {
-                  // Logique de tri par nom décroissant
                   setState(() {
                     tasks.sort((a, b) =>
                         b.nom.toLowerCase().compareTo(a.nom.toLowerCase()));
@@ -179,7 +176,6 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
-  //Fonction de recherche
   List<Task> searchTasks() {
     if (searchQuery.isEmpty) {
       return tasks;
@@ -226,7 +222,9 @@ class _ListScreenState extends State<ListScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Tâche terminée"),
+        content: Text(tasks.firstWhere((task) => task.id == id).isCompleted
+            ? "Tâche terminée"
+            : "Tâche réactivée"),
         backgroundColor: Colors.lightBlue,
       ),
     );
@@ -311,7 +309,6 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
-  // Fonction pour construire les chips de priorité
   Widget buildPriorityChip(String label, Color color) {
     return FilterChip(
       label: Text(label),
@@ -364,7 +361,6 @@ class _ListScreenState extends State<ListScreen> {
                         ),
                       ),
                       Divider(height: 20),
-                      // Champ nom
                       TextField(
                         controller: newTask,
                         decoration: InputDecoration(
@@ -377,7 +373,6 @@ class _ListScreenState extends State<ListScreen> {
                         ),
                       ),
                       Divider(height: 20),
-                      // Section Priorité
                       Text(
                         'Priorité',
                         style: TextStyle(
@@ -393,7 +388,6 @@ class _ListScreenState extends State<ListScreen> {
                         ],
                       ),
                       Divider(height: 20),
-                      // Section Date
                       Text(
                         'Date d\'échéance',
                         style: TextStyle(
@@ -451,7 +445,6 @@ class _ListScreenState extends State<ListScreen> {
                         ),
                       ),
                       Divider(height: 20),
-                      // Boutons
                       Row(
                         children: [
                           Expanded(
@@ -516,7 +509,6 @@ class _ListScreenState extends State<ListScreen> {
                 )
             ],
           ),
-          // Affichage des tâches
           Expanded(
             child: searchTasks().isEmpty
                 ? Center(
@@ -532,8 +524,10 @@ class _ListScreenState extends State<ListScreen> {
                       Task task = searchTasks()[index];
                       return Dismissible(
                         key: Key(task.id),
-                        direction: DismissDirection.horizontal,
-                        // Fond pour glissement à DROITE
+                        // Désactiver le glissement startToEnd pour les tâches terminées
+                        direction: task.isCompleted
+                            ? DismissDirection.endToStart
+                            : DismissDirection.horizontal,
                         background: Container(
                           color: Colors.green,
                           alignment: Alignment.centerLeft,
@@ -552,7 +546,6 @@ class _ListScreenState extends State<ListScreen> {
                             ],
                           ),
                         ),
-                        // Fond pour glissement à GAUCHE
                         secondaryBackground: Container(
                           color: Colors.red,
                           alignment: Alignment.centerRight,
@@ -572,7 +565,6 @@ class _ListScreenState extends State<ListScreen> {
                             ],
                           ),
                         ),
-                        // Action après glissement
                         confirmDismiss: (direction) async {
                           if (direction == DismissDirection.startToEnd) {
                             toggleTaskCompletion(task.id);
@@ -586,10 +578,10 @@ class _ListScreenState extends State<ListScreen> {
                             deleteTask(task.id);
                           }
                         },
-                        //La tâche elle-même
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: getPriorityColor(task.priority, task.isCompleted),
+                            backgroundColor: getPriorityColor(
+                                task.priority, task.isCompleted),
                             radius: 8,
                           ),
                           title: Text(
@@ -612,7 +604,8 @@ class _ListScreenState extends State<ListScreen> {
                               Text(
                                 task.isCompleted ? 'terminée' : task.priority,
                                 style: TextStyle(
-                                  color: getPriorityColor(task.priority, task.isCompleted),
+                                  color: getPriorityColor(
+                                      task.priority, task.isCompleted),
                                 ),
                               ),
                               if (task.dueDate != null && !task.isCompleted)
@@ -622,11 +615,16 @@ class _ListScreenState extends State<ListScreen> {
                                 ),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: Icon(Icons.edit, color: Colors.lightBlue),
-                            onPressed: () => showEditDialog(task),
-                          ),
-                          onTap: () => showEditDialog(task),
+                          // Désactiver l'édition si la tâche est terminée
+                          trailing: task.isCompleted
+                              ? null
+                              : IconButton(
+                                  icon: Icon(Icons.edit, color: Colors.lightBlue),
+                                  onPressed: () => showEditDialog(task),
+                                ),
+                          onTap: task.isCompleted
+                              ? null
+                              : () => showEditDialog(task),
                         ),
                       );
                     },
@@ -637,7 +635,7 @@ class _ListScreenState extends State<ListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           setState(() {
-            isFormDisplayed = true; //affichage du formulaire
+            isFormDisplayed = true;
           });
         },
         tooltip: 'Ajouter une tâche',
