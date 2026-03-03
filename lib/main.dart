@@ -33,6 +33,7 @@ class ListScreen extends StatefulWidget {
 class _ListScreenState extends State<ListScreen> {
   List<Task> tasks = []; 
   final TextEditingController newTask = TextEditingController();
+  String searchQuery = ''; 
   String selectedPriority = 'moyenne';
   DateTime? selecteDate;
   bool isFormDisplayed = false;
@@ -100,6 +101,7 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   void showSearchBar(BuildContext context) {
+    TextEditingController searchController = TextEditingController();
   showDialog(
     context: context, 
     builder: (context) => AlertDialog(
@@ -116,6 +118,11 @@ class _ListScreenState extends State<ListScreen> {
         ),
         TextButton(
           onPressed: () {
+            searchTasks();
+            setState(() {
+              searchQuery = searchController.text; 
+            });
+            
             Navigator.pop(context);
           },
           child: Text('Search'),
@@ -167,10 +174,16 @@ void showSortOptions(BuildContext context) {
      
 }     
     
-  /*Fonction de recherche 
-  Task search(){
-
-  }*/
+  //Fonction de recherche 
+  List<Task> searchTasks() {
+  if (searchQuery.isEmpty) {
+    return tasks; 
+  } else {
+    return tasks.where((task) => 
+      task.nom.toLowerCase().contains(searchQuery.toLowerCase())
+    ).toList();
+  }
+}
   
   void modifyTask(String id, String newName, String newPriority, DateTime? newDate) {
     int index = tasks.indexWhere((task) => task.id == id);
@@ -552,10 +565,11 @@ void showSortOptions(BuildContext context) {
                       // Action après glissement
                       onDismissed: (direction) {
                         if (direction == DismissDirection.startToEnd) {
-                          // marquer comme terminé
-                          toggleTaskCompletion(task.id);
-                          setState(() {
-                          tasks.removeAt(index);
+                          
+                        Future.delayed(Duration(milliseconds: 100), () {
+                          if (mounted) {
+                            toggleTaskCompletion(task.id);
+                          }
                         });
                         } else {
                           //suppression
