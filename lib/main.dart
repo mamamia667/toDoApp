@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Ma Todo List',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -98,7 +99,7 @@ class _ListScreenState extends State<ListScreen> {
     }
   }
 
- /* void showSearchBar(BuildContext context) {
+  void showSearchBar(BuildContext context) {
   showDialog(
     context: context, 
     builder: (context) => AlertDialog(
@@ -115,7 +116,6 @@ class _ListScreenState extends State<ListScreen> {
         ),
         TextButton(
           onPressed: () {
-            
             Navigator.pop(context);
           },
           child: Text('Search'),
@@ -123,7 +123,49 @@ class _ListScreenState extends State<ListScreen> {
       ],
     ),
   );
-}*/
+}
+void showSortOptions(BuildContext context) {
+  // Liste déroulante qui affiche les différents type de tris 
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text('Trier par'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('Nom (A à Z)'),
+              leading: Icon(Icons.sort_by_alpha),
+              onTap: () {
+                // Logique de tri par nom croissant                
+                  setState(() {
+                   tasks.sort((a, b) => a.nom.toLowerCase().compareTo(b.nom.toLowerCase()));
+                  });
+                Navigator.pop(context);
+              }
+            ),
+            ListTile(
+              title: Text('Nom (Z à A)'),
+              leading: Transform.flip(
+               flipX: true, 
+               child: const Icon(Icons.sort_by_alpha),
+              ),
+              onTap: () {
+                // Logique de tri par nom décroissant
+                setState(() {
+                  tasks.sort((a, b) => b.nom.toLowerCase().compareTo(a.nom.toLowerCase()));
+                });  
+                Navigator.pop(context);
+              }
+            )
+          ]
+        )
+      );
+    }
+  );      
+     
+}     
     
   /*Fonction de recherche 
   Task search(){
@@ -132,7 +174,6 @@ class _ListScreenState extends State<ListScreen> {
   
   void modifyTask(String id, String newName, String newPriority, DateTime? newDate) {
     int index = tasks.indexWhere((task) => task.id == id);
-    
     if (index != -1) {
       Task modifiedTask = Task(
         id: tasks[index].id,           
@@ -165,12 +206,13 @@ class _ListScreenState extends State<ListScreen> {
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Tâche mise à jour"),
+        content: Text("Tâche terminée"),
         backgroundColor: Colors.lightBlue,
       ),
     );
   }
   
+
   void showEditDialog(Task task) {
     editTaskController.text = task.nom;
     editPriority = task.priority;
@@ -252,6 +294,8 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
+
+
   // Fonction pour construire les chips de priorité
   Widget buildPriorityChip(String label, Color color) {
     return FilterChip(
@@ -271,7 +315,7 @@ class _ListScreenState extends State<ListScreen> {
     );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
@@ -434,27 +478,32 @@ class _ListScreenState extends State<ListScreen> {
               ),
             ),
           
-          // Affichage des tâches 
-          Expanded(
-             
-            child: tasks.isEmpty 
+            Row(  
+                mainAxisSize: MainAxisSize.min,
+
+                children: [         
+                  IconButton(
+                    //alignment: Alignment.topLeft,
+                    icon: Icon(Icons.search_rounded, color: Colors.lightBlue),
+                    onPressed: () => showSearchBar(context)
+                  ),
+                  IconButton(
+                    //alignment: Alignment.topRight,
+                    icon: Icon(Icons.arrow_downward, color: Colors.lightBlue),
+                    onPressed: () => showSortOptions(context)
+                  ),
+                ]
+              ),
+            
+            // Affichage des tâches   
+            Expanded(
+              child: tasks.isEmpty 
               ? Center(child: Text("Ajouter une tâche vous n'en avez aucune"))
               : ListView.builder(
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     Task task = tasks[index];
                     //La recherche et le filtrage
-                    /*Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.search_rounded, color: Colors.lightBlue),
-                            onPressed: () => /*showSearchBar(search)*/ search,
-                         ),
-                        ]
-                      ),
-                    );*/
                     return  Dismissible(
                       key: Key(task.id),
                       direction: DismissDirection.horizontal,
@@ -513,7 +562,6 @@ class _ListScreenState extends State<ListScreen> {
                           deleteTask(task.id);
                         }
                       },
-                      
                       // La tâche elle-même
                       child: ListTile(
                         leading: CircleAvatar(
@@ -536,7 +584,6 @@ class _ListScreenState extends State<ListScreen> {
                             Text(task.priority,
                               style: TextStyle(
                                 color: getPriorityColor(task.priority),
-                                
                               ),
                             ),
                             if (task.dueDate != null)
