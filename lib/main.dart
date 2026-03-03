@@ -97,6 +97,38 @@ class _ListScreenState extends State<ListScreen> {
         return Colors.grey;
     }
   }
+
+ /* void showSearchBar(BuildContext context) {
+  showDialog(
+    context: context, 
+    builder: (context) => AlertDialog(
+      content: TextField(
+        decoration: InputDecoration(
+          hintText: 'Search...',
+          prefixIcon: Icon(Icons.search),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            
+            Navigator.pop(context);
+          },
+          child: Text('Search'),
+        ),
+      ],
+    ),
+  );
+}*/
+    
+  /*Fonction de recherche 
+  Task search(){
+
+  }*/
   
   void modifyTask(String id, String newName, String newPriority, DateTime? newDate) {
     int index = tasks.indexWhere((task) => task.id == id);
@@ -404,13 +436,26 @@ class _ListScreenState extends State<ListScreen> {
           
           // Affichage des tâches 
           Expanded(
+             
             child: tasks.isEmpty 
               ? Center(child: Text("Ajouter une tâche vous n'en avez aucune"))
               : ListView.builder(
                   itemCount: tasks.length,
                   itemBuilder: (context, index) {
                     Task task = tasks[index];
-                    return Dismissible(
+                    //La recherche et le filtrage
+                    /*Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.search_rounded, color: Colors.lightBlue),
+                            onPressed: () => /*showSearchBar(search)*/ search,
+                         ),
+                        ]
+                      ),
+                    );*/
+                    return  Dismissible(
                       key: Key(task.id),
                       direction: DismissDirection.horizontal,
                       
