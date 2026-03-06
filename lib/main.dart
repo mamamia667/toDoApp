@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:to_do_app/models/tasks.dart';
 
@@ -27,10 +28,23 @@ class ListScreen extends StatefulWidget {
   final String title;
 
   @override
-  State<ListScreen> createState() => _ListScreenState();
+  State<ListScreen> createState() => ListScreenState();
 }
 
-class _ListScreenState extends State<ListScreen> {
+// Remplace CountdownTimerController
+class TimerState {
+  Timer? timer;
+  int remainingSeconds;
+  bool isPaused = false;
+
+  TimerState(this.remainingSeconds);
+
+  void dispose() {
+    timer?.cancel();
+  }
+}
+
+class ListScreenState extends State<ListScreen> {
   List<Task> tasks = [];
   final TextEditingController newTask = TextEditingController();
   String searchQuery = '';
@@ -43,10 +57,21 @@ class _ListScreenState extends State<ListScreen> {
   String editPriority = 'moyenne';
   DateTime? editDate;
 
+  // Remplace Map<String, CountdownTimerController>
+  final Map<String, TimerState> timerControllers = {};
+
+  @override
+  void dispose() {
+    for (var state in timerControllers.values) {
+      state.dispose();
+    }
+    super.dispose();
+  }
+
   void addTask() {
     if (newTask.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text("Le nom de la tâche est requis"),
           backgroundColor: Colors.red,
         ),
@@ -77,11 +102,12 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   void deleteTask(String id) {
+    stopAndRemoveTimer(id);
     setState(() {
       tasks.removeWhere((task) => task.id == id);
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text("Tâche supprimée"),
         backgroundColor: Colors.green,
       ),
@@ -89,9 +115,7 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   Color getPriorityColor(String priority, bool isCompleted) {
-    if (isCompleted) {
-      return Colors.grey;
-    }
+    if (isCompleted) return Colors.grey;
     switch (priority) {
       case 'Relax':
         return Colors.lightBlue;
@@ -111,7 +135,7 @@ class _ListScreenState extends State<ListScreen> {
       builder: (context) => AlertDialog(
         content: TextField(
           controller: searchController,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: 'Rechercher...',
             prefixIcon: Icon(Icons.search),
           ),
@@ -119,7 +143,7 @@ class _ListScreenState extends State<ListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Annuler'),
+            child: const Text('Annuler'),
           ),
           TextButton(
             onPressed: () {
@@ -128,7 +152,7 @@ class _ListScreenState extends State<ListScreen> {
               });
               Navigator.pop(context);
             },
-            child: Text('Rechercher'),
+            child: const Text('Rechercher'),
           ),
         ],
       ),
@@ -140,13 +164,13 @@ class _ListScreenState extends State<ListScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Trier par'),
+          title: const Text('Trier par'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                title: Text('Nom (A à Z)'),
-                leading: Icon(Icons.sort_by_alpha),
+                title: const Text('Nom (A à Z)'),
+                leading: const Icon(Icons.sort_by_alpha),
                 onTap: () {
                   setState(() {
                     tasks.sort((a, b) =>
@@ -156,7 +180,7 @@ class _ListScreenState extends State<ListScreen> {
                 },
               ),
               ListTile(
-                title: Text('Nom (Z à A)'),
+                title: const Text('Nom (Z à A)'),
                 leading: Transform.flip(
                   flipX: true,
                   child: const Icon(Icons.sort_by_alpha),
@@ -177,14 +201,11 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   List<Task> searchTasks() {
-    if (searchQuery.isEmpty) {
-      return tasks;
-    } else {
-      return tasks
-          .where((task) =>
-              task.nom.toLowerCase().contains(searchQuery.toLowerCase()))
-          .toList();
-    }
+    if (searchQuery.isEmpty) return tasks;
+    return tasks
+        .where((task) =>
+            task.nom.toLowerCase().contains(searchQuery.toLowerCase()))
+        .toList();
   }
 
   void modifyTask(String id, String newName, String newPriority,
@@ -204,7 +225,7 @@ class _ListScreenState extends State<ListScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text("Tâche mise à jour"),
           backgroundColor: Colors.green,
         ),
@@ -213,6 +234,7 @@ class _ListScreenState extends State<ListScreen> {
   }
 
   void toggleTaskCompletion(String id) {
+    stopAndRemoveTimer(id);
     setState(() {
       int index = tasks.indexWhere((task) => task.id == id);
       if (index != -1) {
@@ -238,31 +260,31 @@ class _ListScreenState extends State<ListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        constraints: BoxConstraints(maxWidth: 500),
-        title: Text('Modifier la tâche'),
+        constraints: const BoxConstraints(maxWidth: 500),
+        title: const Text('Modifier la tâche'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: editTaskController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Nom de la tâche',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 4,
               children: [
                 buildPriorityChip('Relax', Colors.lightBlue),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 buildPriorityChip('moyenne', Colors.yellow),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 buildPriorityChip('Urgent', Colors.red),
               ],
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Row(
               mainAxisSize: MainAxisSize.max,
               children: [
@@ -281,7 +303,7 @@ class _ListScreenState extends State<ListScreen> {
                       setState(() => editDate = picked);
                     }
                   },
-                  child: Text('Choisir'),
+                  child: const Text('Choisir'),
                 ),
               ],
             ),
@@ -290,7 +312,7 @@ class _ListScreenState extends State<ListScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('ANNULER'),
+            child: const Text('ANNULER'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -302,7 +324,7 @@ class _ListScreenState extends State<ListScreen> {
               );
               Navigator.pop(context);
             },
-            child: Text('MODIFIER'),
+            child: const Text('MODIFIER'),
           ),
         ],
       ),
@@ -326,181 +348,253 @@ class _ListScreenState extends State<ListScreen> {
         fontWeight:
             editPriority == label ? FontWeight.bold : FontWeight.normal,
       ),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     );
   }
 
+  // Timer
+  void stopAndRemoveTimer(String taskId) {
+    final state = timerControllers[taskId];
+    if (state != null) {
+      state.dispose();
+      timerControllers.remove(taskId);
+    }
+  }
+
+  String formatDuration(int totalSeconds) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    String hours = twoDigits(totalSeconds ~/ 3600);
+    String minutes = twoDigits((totalSeconds % 3600) ~/ 60);
+    String seconds = twoDigits(totalSeconds % 60);
+    return "$hours:$minutes:$seconds";
+  }
+
+  void showTimerDialog(Task task) {
+    int hours = 0;
+    int minutes = 0;
+    int seconds = 0;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: Text('Définir le minuteur pour "${task.nom}"'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                    'Durée : ${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}'),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    buildTimePickerColumn(
+                      label: 'Heures',
+                      value: hours,
+                      onIncrement: () => setStateDialog(() => hours++),
+                      onDecrement: () => setStateDialog(() {
+                        if (hours > 0) hours--;
+                      }),
+                    ),
+                    buildTimePickerColumn(
+                      label: 'Minutes',
+                      value: minutes,
+                      onIncrement: () => setStateDialog(
+                          () => minutes = (minutes + 1) % 60),
+                      onDecrement: () => setStateDialog(() {
+                        if (minutes > 0) minutes--;
+                      }),
+                    ),
+                    buildTimePickerColumn(
+                      label: 'Secondes',
+                      value: seconds,
+                      onIncrement: () => setStateDialog(
+                          () => seconds = (seconds + 1) % 60),
+                      onDecrement: () => setStateDialog(() {
+                        if (seconds > 0) seconds--;
+                      }),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('ANNULER'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  int totalSeconds = hours * 3600 + minutes * 60 + seconds;
+                  if (totalSeconds > 0) {
+                    Navigator.pop(context);
+                    startTimer(task.id, totalSeconds);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Veuillez définir une durée'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                  }
+                },
+                child: const Text('DÉMARRER'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget buildTimePickerColumn({
+    required String label,
+    required int value,
+    required VoidCallback onIncrement,
+    required VoidCallback onDecrement,
+  }) {
+    return Column(
+      children: [
+        Text(label),
+        Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove),
+              onPressed: onDecrement,
+            ),
+            Text(value.toString()),
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: onIncrement,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  //  controller du timer()
+  void startTimer(String taskId, int seconds) {
+    final state = TimerState(seconds);
+    state.timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        state.remainingSeconds--;
+        if (state.remainingSeconds <= 0) {
+          timer.cancel();
+          showTimerCompletionDialog(taskId);
+        }
+      });
+    });
+    timerControllers[taskId] = state;
+    setState(() {});
+  }
+
+  // Remplace controller.isPaused / pause() / resume()
+  void pauseOrResumeTimer(String taskId) {
+    final state = timerControllers[taskId];
+    if (state == null) return;
+    if (state.isPaused) {
+      // Reprendre
+      state.timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          state.remainingSeconds--;
+          if (state.remainingSeconds <= 0) {
+            timer.cancel();
+            showTimerCompletionDialog(taskId);
+          }
+        });
+      });
+      state.isPaused = false;
+    } else {
+      // Pause
+      state.timer?.cancel();
+      state.isPaused = true;
+    }
+    setState(() {});
+  }
+
+  void _cancelTimer(String taskId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Annuler le minuteur'),
+        content: const Text('Voulez-vous vraiment annuler ce minuteur ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('NON'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              stopAndRemoveTimer(taskId);
+              Navigator.pop(context);
+              setState(() {});
+            },
+            child: const Text('OUI'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showTimerCompletionDialog(String taskId) {
+    stopAndRemoveTimer(taskId);
+    final task = tasks.firstWhere((t) => t.id == taskId);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Minuteur terminé !'),
+        content: Text('Le minuteur pour "${task.nom}" est terminé. Que souhaitez-vous faire ?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('IGNORER'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              showTimerDialog(task);
+            },
+            child: const Text('NOUVEAU TIMER'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              toggleTaskCompletion(taskId);
+              Navigator.pop(context);
+            },
+            child: const Text('TERMINER'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
-          // Formulaire d'ajout
-          if (isFormDisplayed)
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Text(
-                          'Ma todo List',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.deepPurple,
-                          ),
-                        ),
-                      ),
-                      Divider(height: 20),
-                      TextField(
-                        controller: newTask,
-                        decoration: InputDecoration(
-                          labelText: 'Nom de la tâche',
-                          hintText: 'Ex: Apprendre Flutter',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          prefixIcon: Icon(Icons.task),
-                        ),
-                      ),
-                      Divider(height: 20),
-                      Text(
-                        'Priorité',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w500),
-                      ),
-                      Divider(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          buildPriorityChip('Relax', Colors.lightBlue),
-                          buildPriorityChip('moyenne', Colors.yellow),
-                          buildPriorityChip('Urgent', Colors.red),
-                        ],
-                      ),
-                      Divider(height: 20),
-                      Text(
-                        'Date d\'échéance',
-                        style: TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w500),
-                      ),
-                      Divider(height: 20),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 12),
-                                child: Text(
-                                  selecteDate == null
-                                      ? 'Aucune date sélectionnée'
-                                      : '${selecteDate!.day}/${selecteDate!.month}/${selecteDate!.year}',
-                                  style: TextStyle(
-                                    color: selecteDate == null
-                                        ? Colors.grey
-                                        : Colors.black,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            TextButton.icon(
-                              onPressed: () async {
-                                DateTime today = DateTime.now();
-                                DateTime todayMidnight = DateTime(
-                                    today.year, today.month, today.day);
-                                DateTime? picked = await showDatePicker(
-                                  context: context,
-                                  initialDate: todayMidnight,
-                                  firstDate: todayMidnight,
-                                  lastDate: DateTime(2070),
-                                );
-                                if (picked != null) {
-                                  setState(() => selecteDate = picked);
-                                }
-                              },
-                              icon: Icon(Icons.calendar_today, size: 16),
-                              label: Text('Choisir'),
-                            ),
-                            if (selecteDate != null)
-                              IconButton(
-                                icon: Icon(Icons.clear, size: 16),
-                                onPressed: () =>
-                                    setState(() => selecteDate = null),
-                              ),
-                          ],
-                        ),
-                      ),
-                      Divider(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: addTask,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepPurple,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                'AJOUTER',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: exitAddTask,
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                'ANNULER',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          if (isFormDisplayed) _buildAddTaskForm(),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: Icon(Icons.search_rounded, color: Colors.lightBlue),
+                icon: const Icon(Icons.search_rounded, color: Colors.lightBlue),
                 onPressed: () => showSearchBar(context),
               ),
               IconButton(
-                icon: Icon(Icons.arrow_downward, color: Colors.lightBlue),
+                icon: const Icon(Icons.arrow_downward, color: Colors.lightBlue),
                 onPressed: () => showSortOptions(context),
               ),
               if (searchQuery.isNotEmpty)
                 IconButton(
-                  icon: Icon(Icons.clear, color: Colors.red),
+                  icon: const Icon(Icons.clear, color: Colors.red),
                   onPressed: () {
                     setState(() {
                       searchQuery = '';
@@ -521,18 +615,20 @@ class _ListScreenState extends State<ListScreen> {
                 : ListView.builder(
                     itemCount: searchTasks().length,
                     itemBuilder: (context, index) {
-                      Task task = searchTasks()[index];
+                      final task = searchTasks()[index];
+                      final hasTimer = timerControllers.containsKey(task.id);
+                      final state = timerControllers[task.id];
+
                       return Dismissible(
                         key: Key(task.id),
-                        // Désactiver le glissement startToEnd pour les tâches terminées
                         direction: task.isCompleted
                             ? DismissDirection.endToStart
                             : DismissDirection.horizontal,
                         background: Container(
                           color: Colors.green,
                           alignment: Alignment.centerLeft,
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: Row(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Row(
                             children: [
                               Icon(Icons.check_circle, color: Colors.white),
                               SizedBox(width: 10),
@@ -549,8 +645,8 @@ class _ListScreenState extends State<ListScreen> {
                         secondaryBackground: Container(
                           color: Colors.red,
                           alignment: Alignment.centerRight,
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: Row(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Icon(Icons.delete, color: Colors.white),
@@ -569,9 +665,8 @@ class _ListScreenState extends State<ListScreen> {
                           if (direction == DismissDirection.startToEnd) {
                             toggleTaskCompletion(task.id);
                             return false;
-                          } else {
-                            return true;
                           }
+                          return true;
                         },
                         onDismissed: (direction) {
                           if (direction == DismissDirection.endToStart) {
@@ -580,8 +675,8 @@ class _ListScreenState extends State<ListScreen> {
                         },
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: getPriorityColor(
-                                task.priority, task.isCompleted),
+                            backgroundColor:
+                                getPriorityColor(task.priority, task.isCompleted),
                             radius: 8,
                           ),
                           title: Text(
@@ -590,9 +685,7 @@ class _ListScreenState extends State<ListScreen> {
                               decoration: task.isCompleted
                                   ? TextDecoration.none
                                   : null,
-                              color: task.isCompleted
-                                  ? Colors.grey
-                                  : Colors.black,
+                              color: task.isCompleted ? Colors.grey : Colors.black,
                               fontWeight: task.isCompleted
                                   ? FontWeight.normal
                                   : FontWeight.bold,
@@ -611,16 +704,75 @@ class _ListScreenState extends State<ListScreen> {
                               if (task.dueDate != null && !task.isCompleted)
                                 Text(
                                   'Date: ${task.dueDate!.day}/${task.dueDate!.month}/${task.dueDate!.year}',
-                                  style: TextStyle(fontSize: 12),
+                                  style: const TextStyle(fontSize: 12),
                                 ),
                             ],
                           ),
-                          // Désactiver l'édition si la tâche est terminée
                           trailing: task.isCompleted
                               ? null
-                              : IconButton(
-                                  icon: Icon(Icons.edit, color: Colors.lightBlue),
-                                  onPressed: () => showEditDialog(task),
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (hasTimer && state != null)
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          // Remplace controller.isPaused
+                                          color: state.isPaused
+                                              ? Colors.grey
+                                              : Colors.orange,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () => pauseOrResumeTimer(task.id),
+                                              child: Icon(
+                                                state.isPaused
+                                                    ? Icons.play_arrow
+                                                    : Icons.pause,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            
+                                            Text(
+                                              formatDuration(state.remainingSeconds),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            GestureDetector(
+                                              onTap: () => _cancelTimer(task.id),
+                                              child: const Icon(
+                                                Icons.close,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    if (!hasTimer)
+                                      IconButton(
+                                        icon: const Icon(Icons.timer,
+                                            color: Colors.lightBlue),
+                                        onPressed: () => showTimerDialog(task),
+                                      ),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit,
+                                          color: Colors.lightBlue),
+                                      onPressed: () => showEditDialog(task),
+                                    ),
+                                  ],
                                 ),
                           onTap: task.isCompleted
                               ? null
@@ -640,6 +792,154 @@ class _ListScreenState extends State<ListScreen> {
         },
         tooltip: 'Ajouter une tâche',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildAddTaskForm() {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
+                child: Text(
+                  'Ma todo List',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple,
+                  ),
+                ),
+              ),
+              const Divider(height: 20),
+              TextField(
+                controller: newTask,
+                decoration: const InputDecoration(
+                  labelText: 'Nom de la tâche',
+                  hintText: 'Ex: Apprendre Flutter',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                  ),
+                  prefixIcon: Icon(Icons.task),
+                ),
+              ),
+              const Divider(height: 20),
+              const Text(
+                'Priorité',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const Divider(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  buildPriorityChip('Relax', Colors.lightBlue),
+                  buildPriorityChip('moyenne', Colors.yellow),
+                  buildPriorityChip('Urgent', Colors.red),
+                ],
+              ),
+              const Divider(height: 20),
+              const Text(
+                'Date d\'échéance',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const Divider(height: 20),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          selecteDate == null
+                              ? 'Aucune date sélectionnée'
+                              : '${selecteDate!.day}/${selecteDate!.month}/${selecteDate!.year}',
+                          style: TextStyle(
+                            color: selecteDate == null
+                                ? Colors.grey
+                                : Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final today = DateTime.now();
+                        final todayMidnight = DateTime(today.year, today.month, today.day);
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: todayMidnight,
+                          firstDate: todayMidnight,
+                          lastDate: DateTime(2070),
+                        );
+                        if (picked != null) {
+                          setState(() => selecteDate = picked);
+                        }
+                      },
+                      icon: const Icon(Icons.calendar_today, size: 16),
+                      label: const Text('Choisir'),
+                    ),
+                    if (selecteDate != null)
+                      IconButton(
+                        icon: const Icon(Icons.clear, size: 16),
+                        onPressed: () => setState(() => selecteDate = null),
+                      ),
+                  ],
+                ),
+              ),
+              const Divider(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: addTask,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'AJOUTER',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: exitAddTask,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'ANNULER',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
