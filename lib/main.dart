@@ -57,7 +57,7 @@ class ListScreenState extends State<ListScreen> {
   String editPriority = 'moyenne';
   DateTime? editDate;
 
-  // Remplace Map<String, CountdownTimerController>
+  
   final Map<String, TimerState> timerControllers = {};
 
   @override
@@ -379,7 +379,7 @@ class ListScreenState extends State<ListScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
-            title: Text('Définir le minuteur pour "${task.nom}"'),
+            title: Text('Définir le minuteur pour la tâche : "${task.nom}"'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -474,7 +474,7 @@ class ListScreenState extends State<ListScreen> {
     );
   }
 
-  //  controller du timer()
+  //  demarrage du timer()
   void startTimer(String taskId, int seconds) {
     final state = TimerState(seconds);
     state.timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -490,7 +490,7 @@ class ListScreenState extends State<ListScreen> {
     setState(() {});
   }
 
-  // Remplace controller.isPaused / pause() / resume()
+  // pause() /et resume()
   void pauseOrResumeTimer(String taskId) {
     final state = timerControllers[taskId];
     if (state == null) return;
@@ -513,7 +513,7 @@ class ListScreenState extends State<ListScreen> {
     }
     setState(() {});
   }
-
+//annulation
   void _cancelTimer(String taskId) {
     showDialog(
       context: context,
