@@ -31,7 +31,7 @@ class ListScreen extends StatefulWidget {
   State<ListScreen> createState() => ListScreenState();
 }
 
-// Remplace CountdownTimerController
+
 class TimerState {
   Timer? timer;
   int remainingSeconds;
@@ -45,7 +45,9 @@ class TimerState {
 }
 
 class ListScreenState extends State<ListScreen> {
+  //Sauvegarde à modifier
   List<Task> tasks = [];
+
   final TextEditingController newTask = TextEditingController();
   String searchQuery = '';
   String selectedPriority = 'moyenne';
@@ -67,7 +69,7 @@ class ListScreenState extends State<ListScreen> {
     }
     super.dispose();
   }
-
+    //Ajout à modifier 
   void addTask() {
     if (newTask.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,6 +94,7 @@ class ListScreenState extends State<ListScreen> {
     isFormDisplayed = false;
   }
 
+  //fermer la tâches 
   void exitAddTask() {
     setState(() {
       newTask.clear();
@@ -100,7 +103,8 @@ class ListScreenState extends State<ListScreen> {
       isFormDisplayed = false;
     });
   }
-
+    
+  //Delete à modifier 
   void deleteTask(String id) {
     stopAndRemoveTimer(id);
     setState(() {
@@ -113,7 +117,7 @@ class ListScreenState extends State<ListScreen> {
       ),
     );
   }
-
+  //obtenir la couleur des priorités
   Color getPriorityColor(String priority, bool isCompleted) {
     if (isCompleted) return Colors.grey;
     switch (priority) {
@@ -127,7 +131,8 @@ class ListScreenState extends State<ListScreen> {
         return Colors.grey;
     }
   }
-
+  
+  //afficher la barre de recherche 
   void showSearchBar(BuildContext context) {
     TextEditingController searchController = TextEditingController();
     showDialog(
@@ -158,7 +163,8 @@ class ListScreenState extends State<ListScreen> {
       ),
     );
   }
-
+  
+  //affiche les tâches triées
   void showSortOptions(BuildContext context) {
     showDialog(
       context: context,
@@ -199,7 +205,8 @@ class ListScreenState extends State<ListScreen> {
       },
     );
   }
-
+  
+  //Affiche les tâches 
   List<Task> searchTasks() {
     if (searchQuery.isEmpty) return tasks;
     return tasks
@@ -207,7 +214,8 @@ class ListScreenState extends State<ListScreen> {
             task.nom.toLowerCase().contains(searchQuery.toLowerCase()))
         .toList();
   }
-
+  
+  //A modifier 
   void modifyTask(String id, String newName, String newPriority,
       DateTime? newDate) {
     int index = tasks.indexWhere((task) => task.id == id);
@@ -251,7 +259,8 @@ class ListScreenState extends State<ListScreen> {
       ),
     );
   }
-
+ 
+ //Affichage de la card de la modification 
   void showEditDialog(Task task) {
     editTaskController.text = task.nom;
     editPriority = task.priority;
@@ -330,7 +339,8 @@ class ListScreenState extends State<ListScreen> {
       ),
     );
   }
-
+  
+  //construction des chpis de priorité
   Widget buildPriorityChip(String label, Color color) {
     return FilterChip(
       label: Text(label),
@@ -352,7 +362,7 @@ class ListScreenState extends State<ListScreen> {
     );
   }
 
-  // Timer
+  // Annuler le timer et le retirer 
   void stopAndRemoveTimer(String taskId) {
     final state = timerControllers[taskId];
     if (state != null) {
@@ -360,7 +370,8 @@ class ListScreenState extends State<ListScreen> {
       timerControllers.remove(taskId);
     }
   }
-
+  
+  //formattage temps
   String formatDuration(int totalSeconds) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     String hours = twoDigits(totalSeconds ~/ 3600);
@@ -368,7 +379,8 @@ class ListScreenState extends State<ListScreen> {
     String seconds = twoDigits(totalSeconds % 60);
     return "$hours:$minutes:$seconds";
   }
-
+  
+  //affichage temps
   void showTimerDialog(Task task) {
     int hours = 0;
     int minutes = 0;
@@ -447,7 +459,8 @@ class ListScreenState extends State<ListScreen> {
       ),
     );
   }
-
+  
+  //sélectionneur de temps 
   Widget buildTimePickerColumn({
     required String label,
     required int value,
@@ -490,7 +503,7 @@ class ListScreenState extends State<ListScreen> {
     setState(() {});
   }
 
-  // pause() /et resume()
+  // pause() /et resume() timer
   void pauseOrResumeTimer(String taskId) {
     final state = timerControllers[taskId];
     if (state == null) return;
@@ -513,8 +526,9 @@ class ListScreenState extends State<ListScreen> {
     }
     setState(() {});
   }
-//annulation
-  void _cancelTimer(String taskId) {
+  
+  //annulation timer
+  void cancelTimer(String taskId) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -538,6 +552,7 @@ class ListScreenState extends State<ListScreen> {
     );
   }
 
+  //afficher le timer terminé
   void showTimerCompletionDialog(String taskId) {
     stopAndRemoveTimer(taskId);
     final task = tasks.firstWhere((t) => t.id == taskId);
@@ -574,7 +589,7 @@ class ListScreenState extends State<ListScreen> {
     );
   }
 
-  
+  //Affichage
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -719,7 +734,7 @@ class ListScreenState extends State<ListScreen> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          // Remplace controller.isPaused
+                                          
                                           color: state.isPaused
                                               ? Colors.grey
                                               : Colors.orange,
@@ -751,7 +766,7 @@ class ListScreenState extends State<ListScreen> {
                                             ),
                                             const SizedBox(width: 4),
                                             GestureDetector(
-                                              onTap: () => _cancelTimer(task.id),
+                                              onTap: () => cancelTimer(task.id),
                                               child: const Icon(
                                                 Icons.close,
                                                 color: Colors.white,
