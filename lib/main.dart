@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:to_do_app/models/tasks.dart';
+import 'services/api.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,8 +24,8 @@ class MyApp extends StatelessWidget {
 }
 
 class ListScreen extends StatefulWidget {
+  
   const ListScreen({super.key, required this.title});
-
   final String title;
 
   @override
@@ -47,13 +48,39 @@ class TimerState {
 class ListScreenState extends State<ListScreen> {
   //Sauvegarde à modifier
   List<Task> tasks = [];
-
+  final ApiService apiService = ApiService();
   final TextEditingController newTask = TextEditingController();
   String searchQuery = '';
   String selectedPriority = 'moyenne';
   DateTime? selecteDate;
   bool isFormDisplayed = false;
 
+
+  //iniatialisation
+  @override
+  void initState() {
+      super.initState();
+      loadTasks();
+  }
+  //récupère les tâches
+  Future<void> loadTasks() async {
+      try {
+          final tasks = await apiService.getTasks();
+          setState(() {
+              this.tasks = tasks;
+          });
+      } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text('Erreur: $e'),
+                  backgroundColor: Colors.red,
+              ),
+          );
+      }
+  }
+
+
+  
   // Pour la modification
   final TextEditingController editTaskController = TextEditingController();
   String editPriority = 'moyenne';
@@ -69,30 +96,49 @@ class ListScreenState extends State<ListScreen> {
     }
     super.dispose();
   }
-    //Ajout à modifier 
-  void addTask() {
+    //Ajouter une tâche avec API 
+  Future<void> addTask() async {
     if (newTask.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Le nom de la tâche est requis"),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text("Le nom de la tâche est requis"),
+                backgroundColor: Colors.red,
+            ),
+        );
+        return;
     }
-    setState(() {
-      tasks.add(Task(
-        id: DateTime.now().toString(),
-        nom: newTask.text,
-        priority: editPriority,
-        dueDate: selecteDate,
-      ));
-    });
-    newTask.clear();
-    editPriority = 'moyenne';
-    selecteDate = null;
-    isFormDisplayed = false;
-  }
+
+    try {
+        final task = Task(
+            id: 0,
+            nom: newTask.text,
+            priority: editPriority,
+            dueDate: selecteDate,
+        );
+
+        await apiService.createTask(task);
+        await loadTasks();
+
+        newTask.clear();
+        editPriority = 'moyenne';
+        selecteDate = null;
+        setState(() => isFormDisplayed = false);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text("Tâche ajoutée !"),
+                backgroundColor: Colors.green,
+            ),
+        );
+    } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Erreur: $e'),
+                backgroundColor: Colors.red,
+            ),
+        );
+    }
+}
 
   //fermer la tâches 
   void exitAddTask() {
@@ -104,19 +150,29 @@ class ListScreenState extends State<ListScreen> {
     });
   }
     
-  //Delete à modifier 
-  void deleteTask(String id) {
+  //Delete avec api
+  Future<void> deleteTask(String id) async {
     stopAndRemoveTimer(id);
-    setState(() {
-      tasks.removeWhere((task) => task.id == id);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Tâche supprimée"),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
+    
+    try {
+        await apiService.deleteTask(int.parse(id));
+        await loadTasks();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text("Tâche supprimée"),
+                backgroundColor: Colors.green,
+            ),
+        );
+    } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Erreur: $e'),
+                backgroundColor: Colors.red,
+            ),
+        );
+    }
+}
   //obtenir la couleur des priorités
   Color getPriorityColor(String priority, bool isCompleted) {
     if (isCompleted) return Colors.grey;
@@ -215,50 +271,72 @@ class ListScreenState extends State<ListScreen> {
         .toList();
   }
   
-  //A modifier 
-  void modifyTask(String id, String newName, String newPriority,
-      DateTime? newDate) {
-    int index = tasks.indexWhere((task) => task.id == id);
-    if (index != -1) {
-      Task modifiedTask = Task(
-        id: tasks[index].id,
-        nom: newName,
-        dueDate: newDate,
-        priority: newPriority,
-        isCompleted: tasks[index].isCompleted,
-      );
+  // modifier une tache avec API 
+  Future<void> modifyTask(String id, String newName, String newPriority,
+    DateTime? newDate) async {
+    
+    try {
+        final task = Task(
+            id: int.parse(id),
+            nom: newName,
+            priority: newPriority,
+            dueDate: newDate,
+            isCompleted: tasks.firstWhere((t) => t.id == int.parse(id)).isCompleted,
+        );
 
-      setState(() {
-        tasks[index] = modifiedTask;
-      });
+        await apiService.updateTask(task);
+        await loadTasks();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Tâche mise à jour"),
-          backgroundColor: Colors.green,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text("Tâche mise à jour"),
+                backgroundColor: Colors.green,
+            ),
+        );
+    } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Erreur: $e'),
+                backgroundColor: Colors.red,
+            ),
+        );
     }
-  }
+}
 
-  void toggleTaskCompletion(String id) {
+Future<void> toggleTaskCompletion(String id) async {
     stopAndRemoveTimer(id);
-    setState(() {
-      int index = tasks.indexWhere((task) => task.id == id);
-      if (index != -1) {
-        tasks[index].isCompleted = !tasks[index].isCompleted;
-      }
-    });
+    
+    try {
+        final task = tasks.firstWhere((t) => t.id == int.parse(id));
+        
+        final updatedTask = Task(
+            id: task.id,
+            nom: task.nom,
+            priority: task.priority,
+            dueDate: task.dueDate,
+            isCompleted: !task.isCompleted,
+        );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(tasks.firstWhere((task) => task.id == id).isCompleted
-            ? "Tâche terminée"
-            : "Tâche réactivée"),
-        backgroundColor: Colors.lightBlue,
-      ),
-    );
-  }
+        await apiService.updateTask(updatedTask);
+        await loadTasks();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    updatedTask.isCompleted ? "Tâche terminée" : "Tâche réactivée"
+                ),
+                backgroundColor: Colors.lightBlue,
+            ),
+        );
+    } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text('Erreur: $e'),
+                backgroundColor: Colors.red,
+            ),
+        );
+    }
+}
  
  //Affichage de la card de la modification 
   void showEditDialog(Task task) {
@@ -326,7 +404,7 @@ class ListScreenState extends State<ListScreen> {
           ElevatedButton(
             onPressed: () {
               modifyTask(
-                task.id,
+                task.id.toString(),
                 editTaskController.text,
                 editPriority,
                 editDate,
@@ -441,7 +519,7 @@ class ListScreenState extends State<ListScreen> {
                   int totalSeconds = hours * 3600 + minutes * 60 + seconds;
                   if (totalSeconds > 0) {
                     Navigator.pop(context);
-                    startTimer(task.id, totalSeconds);
+                    startTimer(task.id.toString(), totalSeconds);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -555,7 +633,7 @@ class ListScreenState extends State<ListScreen> {
   //afficher le timer terminé
   void showTimerCompletionDialog(String taskId) {
     stopAndRemoveTimer(taskId);
-    final task = tasks.firstWhere((t) => t.id == taskId);
+    final task = tasks.firstWhere((t) => t.id.toString() == taskId);
 
     showDialog(
       context: context,
@@ -631,11 +709,11 @@ class ListScreenState extends State<ListScreen> {
                     itemCount: searchTasks().length,
                     itemBuilder: (context, index) {
                       final task = searchTasks()[index];
-                      final hasTimer = timerControllers.containsKey(task.id);
-                      final state = timerControllers[task.id];
+                      final hasTimer =  timerControllers.containsKey(task.id.toString());
+                      final state = timerControllers[task.id.toString()];
 
                       return Dismissible(
-                        key: Key(task.id),
+                        key:Key(task.id.toString()),
                         direction: task.isCompleted
                             ? DismissDirection.endToStart
                             : DismissDirection.horizontal,
@@ -678,14 +756,14 @@ class ListScreenState extends State<ListScreen> {
                         ),
                         confirmDismiss: (direction) async {
                           if (direction == DismissDirection.startToEnd) {
-                            toggleTaskCompletion(task.id);
+                            toggleTaskCompletion(task.id.toString());
                             return false;
                           }
                           return true;
                         },
                         onDismissed: (direction) {
                           if (direction == DismissDirection.endToStart) {
-                            deleteTask(task.id);
+                            deleteTask(task.id.toString());
                           }
                         },
                         child: ListTile(
@@ -745,7 +823,7 @@ class ListScreenState extends State<ListScreen> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             GestureDetector(
-                                              onTap: () => pauseOrResumeTimer(task.id),
+                                              onTap: () => pauseOrResumeTimer(task.id.toString()),
                                               child: Icon(
                                                 state.isPaused
                                                     ? Icons.play_arrow
@@ -766,7 +844,7 @@ class ListScreenState extends State<ListScreen> {
                                             ),
                                             const SizedBox(width: 4),
                                             GestureDetector(
-                                              onTap: () => cancelTimer(task.id),
+                                              onTap: () => cancelTimer(task.id.toString()),
                                               child: const Icon(
                                                 Icons.close,
                                                 color: Colors.white,
